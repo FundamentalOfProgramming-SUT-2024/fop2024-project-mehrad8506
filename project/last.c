@@ -15,6 +15,9 @@ typedef struct
     int money;
     int games_played;
     int exp;
+
+    int difficulty;
+    int color;
 } USER_DATA;
 
 pthread_t thread1 , thread2;
@@ -71,6 +74,11 @@ typedef struct
     int power_charm;
     int speed_charm;
 
+    int dagger_count;
+    int arrow_count;
+    int wand_count;
+    int close_range_damage;
+    int long_type;
     pthread_mutex_t lock;
 } PLAYER;
 
@@ -162,6 +170,7 @@ typedef struct
 } CHARM;
 
 int make_menu();
+int settings(USER_DATA user);
 int profile_page();
 int score_board();
 
@@ -197,12 +206,15 @@ int food_basics(FOOD * food);
 int eat_food_menu(FOOD foods[4]);
 int use_charm_menu(CHARM charm[4]);
 int init_monsters(MONSTER monster[6] , ROOM rooms[6]);
-
+int init_weapon_menu();
+int long_range_menu(PLAYER * player);
+int short_range_menu(PLAYER * player);
 
 USER_DATA user_main;
 
 int main()
 {
+    
     initscr();
     clear();
     noecho();
@@ -217,338 +229,396 @@ int main()
     if(num == 1){
         log_in_menu();
     }
-    
-    strcpy(user_main.name , "mehrad1");
-    strcpy(user_main.email , "");
-    strcpy(user_main.pass , "");
-    user_main.money = 0;
-    user_main.exp = 0;
-    user_main.games_played = 0;
-    user_main.score = 0;
-
-    clear();
-    noecho();
-    cbreak();
-    // here we make our new menu
-    int num_2  = make_menu(user_main);
-    
-    // print info : print : user.kossher
-    
-    // profile menu : users info : ranking - name - score - money - games_played - exp
-
-
-    //here it ends
-    getch();
-    clear();
-    noecho();
-    cbreak();
-    keypad(stdscr , TRUE);
-    halfdelay(1);
-
-    PLAYER player1 = {-1 , -1 , 0 , 100 ,  0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 0 , PTHREAD_MUTEX_INITIALIZER};
-    PASS_CHARNGER password = {"\0" , 0 , 0 , PTHREAD_MUTEX_INITIALIZER};
-    srand(time(NULL));
-
-    ROOM rooms[4][6];
-
-    char floor[4][50][180] , shown_floor[4][50][180];
-
-    int end_program = 0;
-    while(end_program < 4)
+    while(1)
     {
-        MONSTER monster[6];
-        OBJECTS object;
-        object.num = 0;
-        // making null floor
-        for(int i = 0 ; i < 50 ; i++)
-        {
-            for(int j = 0 ; j < 180 ; j++)
-            {
-                floor[end_program][i][j] = ' ';
-                shown_floor[end_program][i][j] = ' ';
-            }
-        }
+        //strcpy(user_main.name , "mehrad1");
+        strcpy(user_main.email , "");
+        strcpy(user_main.pass , "");
+        user_main.money = 0;
+        user_main.exp = 0;
+        user_main.games_played = 0;
+        user_main.score = 0;
+        user_main.difficulty = 0;
+        user_main.color = 0;
         clear();
-        // room making
-        for(int i = 0 ; i < 3 ; i++)
-        {
-            rooms[end_program][i].up_row = 5 + rand() % 10;
-            rooms[end_program][i].down_row = rooms[end_program][i].up_row + 8 + rand() % (15 - rooms[end_program][i].up_row);
-            rooms[end_program][i].room_type = 0;
-            rooms[end_program][i].col_count = 0;
-        }
-        for(int i = 3 ; i < 6 ; i++)
-        {
-            rooms[end_program][i].up_row = 25 + rand() % 10;
-            rooms[end_program][i].down_row = rooms[end_program][i].up_row + 8 + rand() % (35 - rooms[end_program][i].up_row);
-            rooms[end_program][i].room_type = 0;
-            rooms[end_program][i].col_count = 0;
-        }
-        for(int i = 0 ; i < 6 ; i += 3)
-        {
-            rooms[end_program][i].left_col = 20 + rand() % 20;
-            rooms[end_program][i].right_col = rooms[end_program][i].left_col + 10 + rand() % 15;
-        }
-        for(int i = 1 ; i < 6 ; i += 3)
-        {
-            rooms[end_program][i].left_col = 70 + rand() % 20;
-            rooms[end_program][i].right_col = rooms[end_program][i].left_col + 10 + rand() % 15;
-        }
-        for(int i = 2 ; i < 6 ; i += 3)
-        {
-            rooms[end_program][i].left_col = 120 + rand() % 20;
-            rooms[end_program][i].right_col = rooms[end_program][i].left_col + 10 + rand() % 15;
-        }
-        init_monsters(monster , rooms[end_program]);
-        // for(int i = 0 ; i < 6 ; i++)
-        // {
-        //     monster[i].x_pos = rooms[end_program][i].left_col + 1;
-        //     monster[i].y_pos = rooms[end_program][i].up_row + 1;
-        //     monster[i].symbol = 'S';
-        //     monster[i].speed = 10;
-        //     monster[i].timer = 0;
-        //     monster[i].damage = 10;
-        //     monster[i].health = 20;
-        //     monster[i].active = 0;
-        //     monster[i].room_number = i;
-        // }
-        // monster[0].active = 1;
+        noecho();
+        cbreak();
+        // here we make our new menu
+        int num_2  = make_menu(user_main);
         
-        player1.y_pos = (rooms[end_program][0].up_row + rooms[end_program][0].down_row) / 2;
-        player1.x_pos = (rooms[end_program][0].left_col + rooms[end_program][0].right_col) / 2;
-
-        for(int i = 0 ; i < 6 ; i++)
-        {
-            generate_map(rooms[end_program][i] , floor[end_program]);
-            rooms[end_program][i].been = 0;
-        }
-        //floor[end_program][monster.y_pos][monster.x_pos] = 'S';
+        // print info : print : user.kossher
         
-        int doors_x[10] , doors_y[10];
+        // profile menu : users info : ranking - name - score - money - games_played - exp
 
-        // make doors
-        for(int i = 0 ; i < 10 ; i++)
+
+        //here it ends
+        getch();
+        clear();
+        noecho();
+        cbreak();
+        keypad(stdscr , TRUE);
+        halfdelay(1);
+
+        PLAYER player1 = {-1 , -1 , 0 , 100 ,  0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 0 , -1 , -1 , -1 , 5 , 0 , PTHREAD_MUTEX_INITIALIZER};
+        PASS_CHARNGER password = {"\0" , 0 , 0 , PTHREAD_MUTEX_INITIALIZER};
+        player1.health -= 25 * user_main.difficulty;
+        srand(time(NULL));
+
+        ROOM rooms[4][6];
+
+        char floor[5][50][180] , shown_floor[5][50][180];
+
+        int end_program = 0;
+        while(end_program < 4)
         {
-            if(i % 4 == 0)
+            MONSTER monster[6];
+            OBJECTS object;
+            object.num = 0;
+            // making null floor
+            for(int i = 0 ; i < 50 ; i++)
             {
-                doors_x[i] = rooms[end_program][i / 4].left_col + 1 + rand() % (rooms[end_program][i / 4].right_col - rooms[end_program][i / 4].left_col - 2);
-                doors_y[i] = rooms[end_program][i / 4].down_row;
+                for(int j = 0 ; j < 180 ; j++)
+                {
+                    floor[end_program][i][j] = ' ';
+                    shown_floor[end_program][i][j] = ' ';
+                }
             }
-            else if(i % 4 == 1)
+            clear();
+            // room making
+            for(int i = 0 ; i < 3 ; i++)
             {
-                doors_x[i] = rooms[end_program][3 + i / 4].left_col + 1 + rand() % (rooms[end_program][3 + i / 4].right_col - rooms[end_program][3 + i / 4].left_col - 2);
-                doors_y[i] = rooms[end_program][3 + i / 4].up_row;
+                rooms[end_program][i].up_row = 5 + rand() % 10;
+                rooms[end_program][i].down_row = rooms[end_program][i].up_row + 8 + rand() % (15 - rooms[end_program][i].up_row);
+                rooms[end_program][i].room_type = 0;
+                rooms[end_program][i].col_count = 0;
             }
-            else if(i % 4 == 2)
+            for(int i = 3 ; i < 6 ; i++)
             {
-                doors_x[i] = rooms[end_program][3 + i / 4].right_col;
-                doors_y[i] = rooms[end_program][3 + i / 4].up_row + 1 + rand() % (rooms[end_program][3 + i / 4].down_row - rooms[end_program][3 + i / 4].up_row - 2);
+                rooms[end_program][i].up_row = 25 + rand() % 10;
+                rooms[end_program][i].down_row = rooms[end_program][i].up_row + 8 + rand() % (35 - rooms[end_program][i].up_row);
+                rooms[end_program][i].room_type = 0;
+                rooms[end_program][i].col_count = 0;
+            }
+            for(int i = 0 ; i < 6 ; i += 3)
+            {
+                rooms[end_program][i].left_col = 20 + rand() % 20;
+                rooms[end_program][i].right_col = rooms[end_program][i].left_col + 10 + rand() % 15;
+            }
+            for(int i = 1 ; i < 6 ; i += 3)
+            {
+                rooms[end_program][i].left_col = 70 + rand() % 20;
+                rooms[end_program][i].right_col = rooms[end_program][i].left_col + 10 + rand() % 15;
+            }
+            for(int i = 2 ; i < 6 ; i += 3)
+            {
+                rooms[end_program][i].left_col = 120 + rand() % 20;
+                rooms[end_program][i].right_col = rooms[end_program][i].left_col + 10 + rand() % 15;
+            }
+            init_monsters(monster , rooms[end_program]);
+            // for(int i = 0 ; i < 6 ; i++)
+            // {
+            //     monster[i].x_pos = rooms[end_program][i].left_col + 1;
+            //     monster[i].y_pos = rooms[end_program][i].up_row + 1;
+            //     monster[i].symbol = 'S';
+            //     monster[i].speed = 10;
+            //     monster[i].timer = 0;
+            //     monster[i].damage = 10;
+            //     monster[i].health = 20;
+            //     monster[i].active = 0;
+            //     monster[i].room_number = i;
+            // }
+            // monster[0].active = 1;
+            
+            player1.y_pos = (rooms[end_program][0].up_row + rooms[end_program][0].down_row) / 2;
+            player1.x_pos = (rooms[end_program][0].left_col + rooms[end_program][0].right_col) / 2;
+
+            for(int i = 0 ; i < 6 ; i++)
+            {
+                generate_map(rooms[end_program][i] , floor[end_program]);
+                rooms[end_program][i].been = 0;
+            }
+            //floor[end_program][monster.y_pos][monster.x_pos] = 'S';
+            
+            int doors_x[10] , doors_y[10];
+
+            // make doors
+            for(int i = 0 ; i < 10 ; i++)
+            {
+                if(i % 4 == 0)
+                {
+                    doors_x[i] = rooms[end_program][i / 4].left_col + 1 + rand() % (rooms[end_program][i / 4].right_col - rooms[end_program][i / 4].left_col - 2);
+                    doors_y[i] = rooms[end_program][i / 4].down_row;
+                }
+                else if(i % 4 == 1)
+                {
+                    doors_x[i] = rooms[end_program][3 + i / 4].left_col + 1 + rand() % (rooms[end_program][3 + i / 4].right_col - rooms[end_program][3 + i / 4].left_col - 2);
+                    doors_y[i] = rooms[end_program][3 + i / 4].up_row;
+                }
+                else if(i % 4 == 2)
+                {
+                    doors_x[i] = rooms[end_program][3 + i / 4].right_col;
+                    doors_y[i] = rooms[end_program][3 + i / 4].up_row + 1 + rand() % (rooms[end_program][3 + i / 4].down_row - rooms[end_program][3 + i / 4].up_row - 2);
+                }
+                else
+                {
+                    doors_x[i] = rooms[end_program][1 + i / 4].left_col;
+                    doors_y[i] = rooms[end_program][1 + i / 4].up_row + 1 + rand() % (rooms[end_program][1 + i / 4].down_row - rooms[end_program][1 + i / 4].up_row - 2);
+                }
+                //mvprintw(doors_y[i] , doors_x[i] , "+");
+                floor[end_program][doors_y[i]][doors_x[i]] = '+';
+                refresh();
+            }
+            //   print : & instead of + for down door of room 3
+            //   make an object for the pass_key
+            //   if in the door : two options : pay 10 money or use the key
+            //   fix moving to &
+
+            //
+            floor[end_program][doors_y[4]][doors_x[4]] = '@';
+            floor[end_program][rooms[end_program][1].up_row + 4][rooms[end_program][1].right_col] = '&';
+            rooms[end_program][2].room_type = 1;
+
+            rooms[end_program][3].room_type = 2;
+
+            make_hallway(doors_x , doors_y , floor[end_program]);
+
+            // giving every room a money:
+            GOLD gold[6];
+            for(int i = 0 ; i < 6 ; i++)
+            {
+                gold[i].symbol = '*';
+                gold[i].x_pos = rooms[end_program][i].left_col + 1 + rand() % (rooms[end_program][i].right_col - rooms[end_program][i].left_col - 2);
+                gold[i].y_pos = rooms[end_program][i].up_row + 1 + rand() % (rooms[end_program][i].down_row - rooms[end_program][i].up_row - 2);
+                gold[i].amount = rand() % 20;
+                gold[i].used = 0;
+                object.x_pos[object.num] = gold[i].x_pos;
+                object.y_pos[object.num] = gold[i].y_pos;
+                object.num++;
+            }
+            
+            // make stairs
+            int stair_x , stair_y;
+            while(1)
+            {
+                stair_x = rooms[end_program][5].left_col + 1 + rand() % (rooms[end_program][5].right_col - rooms[end_program][5].left_col - 2);
+                stair_y = rooms[end_program][5].up_row + 1 + rand() % (rooms[end_program][5].down_row - rooms[end_program][5].up_row - 2);
+                if(floor[end_program][stair_y][stair_x] == '.' && (stair_x != gold[5].x_pos || stair_y != gold[5].y_pos))
+                {
+                    object.x_pos[object.num] = stair_x;
+                    object.y_pos[object.num] = stair_y;
+                    object.num++;
+                    break;
+                }
+            }
+
+            rooms[end_program][5].stair_x = stair_x;
+            rooms[end_program][5].stair_y = stair_y;
+            refresh();
+
+            // trap
+
+            TRAP trap[3];
+            for(int i = 0 ; i < 3 ; i++)
+            {
+                while(1)
+                {
+                    int y_pos = rand() % 50;
+                    int x_pos = rand() % 180;
+                    if(floor[end_program][y_pos][x_pos] != ' ' && floor[end_program][y_pos][x_pos] != '+' && floor[end_program][y_pos][x_pos] != '|' && floor[end_program][y_pos][x_pos] != '-' && (x_pos != player1.x_pos || y_pos != player1.y_pos))
+                    {
+                        trap[i].x_pos = x_pos;
+                        trap[i].y_pos = y_pos;
+                        object.x_pos[object.num] = x_pos;
+                        object.y_pos[object.num] = y_pos;
+                        object.num++;
+                        trap[i].second = 4 + rand() % 3;
+                        trap[i].damage = 10;
+                        break;
+                    }
+                }
+            }
+            // floor[end_program][trap[0].y_pos][trap[0].x_pos] = 'T';
+            // floor[end_program][trap[1].y_pos][trap[1].x_pos] = 'T';
+            // floor[end_program][trap[2].y_pos][trap[2].x_pos] = 'T';
+            // 
+            
+            
+            // make food
+            FOOD foods[4];
+            while(1)
+            {
+                int x = rand() % 180 , y = rand() % 50;
+                if(floor[end_program][y][x] == '.' && is_empty(x , y , object) == 0)
+                {
+                    foods[end_program].x_pos = x;
+                    foods[end_program].y_pos = y;
+                    object.x_pos[object.num] = x;
+                    object.y_pos[object.num] = y;
+                    object.num++;
+                    break;
+                }
+            }
+            food_basics(&foods[end_program]);
+            floor[end_program][foods[end_program].y_pos][foods[end_program].x_pos] = foods[end_program].symbol;
+
+            // making charms:
+            CHARM charm[4];
+            while(1)
+            {
+                int x = rand() % 180 , y = rand() % 50;
+                if(floor[end_program][y][x] == '.' && is_empty(x , y , object) == 0)
+                {
+                    charm[end_program].x_pos = x;
+                    charm[end_program].y_pos = y;
+                    object.x_pos[object.num] = x;
+                    object.y_pos[object.num] = y;
+                    object.num++;
+                    break;
+                }
+            }
+            if(end_program == 0)
+            {
+                charm[end_program].symbol = 's';
+                charm[end_program].timer = 0;
+                charm[end_program].used = 0;
+                charm[end_program].type = 1;
+                charm[end_program].active = 0;
+            }
+            else if(end_program == 1)
+            {
+                charm[end_program].symbol = 'p';
+                charm[end_program].timer = 0;
+                charm[end_program].used = 0;
+                charm[end_program].type = 2;
+                charm[end_program].active = 0;
             }
             else
             {
-                doors_x[i] = rooms[end_program][1 + i / 4].left_col;
-                doors_y[i] = rooms[end_program][1 + i / 4].up_row + 1 + rand() % (rooms[end_program][1 + i / 4].down_row - rooms[end_program][1 + i / 4].up_row - 2);
+                charm[end_program].symbol = 'h';
+                charm[end_program].timer = 0;
+                charm[end_program].used = 0;
+                charm[end_program].type = 3;
+                charm[end_program].active = 0;
             }
-            //mvprintw(doors_y[i] , doors_x[i] , "+");
-            floor[end_program][doors_y[i]][doors_x[i]] = '+';
+            floor[end_program][charm[end_program].y_pos][charm[end_program].x_pos] = charm[end_program].symbol;
+            // making columns
+            for(int i = 0 ; i < 6 ; i++)
+            {
+                while(1)
+                {
+                    rooms[end_program][i].cols_x[rooms[end_program][i].col_count] = rooms[end_program][i].left_col + 2 + rand() % (rooms[end_program][i].right_col - rooms[end_program][i].left_col - 4);
+                    rooms[end_program][i].cols_y[rooms[end_program][i].col_count] = rooms[end_program][i].up_row + 2 + rand() % (rooms[end_program][i].down_row - rooms[end_program][i].up_row - 4);
+                    if(is_empty(rooms[end_program][i].cols_x[rooms[end_program][i].col_count] , rooms[end_program][i].cols_y[rooms[end_program][i].col_count] , object) == 0)
+                    {
+                        rooms[end_program][i].col_count++;
+                        object.x_pos[object.num] = rooms[end_program][i].cols_x[rooms[end_program][i].col_count];
+                        object.y_pos[object.num] = rooms[end_program][i].cols_y[rooms[end_program][i].col_count];
+                        floor[end_program][object.y_pos[object.num]][object.x_pos[object.num]] = 'O';
+                        object.num++;
+                        break;
+                    }
+                }
+                while(1)
+                {
+                    rooms[end_program][i].cols_x[rooms[end_program][i].col_count] = rooms[end_program][i].left_col + 2 + rand() % (rooms[end_program][i].right_col - rooms[end_program][i].left_col - 4);
+                    rooms[end_program][i].cols_y[rooms[end_program][i].col_count] = rooms[end_program][i].up_row + 2 + rand() % (rooms[end_program][i].down_row - rooms[end_program][i].up_row - 4);
+                    if(is_empty(rooms[end_program][i].cols_x[rooms[end_program][i].col_count] , rooms[end_program][i].cols_y[rooms[end_program][i].col_count] , object) == 0)
+                    {
+                        rooms[end_program][i].col_count++;
+                        object.x_pos[object.num] = rooms[end_program][i].cols_x[rooms[end_program][i].col_count];
+                        object.y_pos[object.num] = rooms[end_program][i].cols_y[rooms[end_program][i].col_count];
+                        floor[end_program][object.y_pos[object.num]][object.x_pos[object.num]] = 'O';
+                        object.num++;
+                        break;
+                    }
+                }
+            }
+
+            show_map(rooms[end_program][0] , floor[end_program] , shown_floor[end_program]);
+            mvprintw(doors_y[0] , doors_x[0] , "+");
+            shown_floor[end_program][doors_y[0]][doors_x[0]] = '+';
+            rooms[end_program][0].been = 1;
+            mvprintw(gold[0].y_pos , gold[0].x_pos , "*");
+            shown_floor[end_program][gold[0].y_pos][gold[0].x_pos] = '*';
+            mvprintw(monster[0].y_pos , monster[0].x_pos , "%c" , monster[0].symbol);
+            shown_floor[end_program][monster[0].y_pos][monster[0].x_pos] = monster[0].symbol;
+            refresh();
+
+            mvprintw(player1.y_pos , player1.x_pos , "H");
+            move(player1.y_pos , player1.x_pos);
+
+            DAGGER dagger;
+            dagger.active = 0;
+            dagger.range = 5;
+            dagger.symbol = '~';
+            dagger.timer = 0;
+            dagger.moves = 0;
+            dagger.damage = 12;
+
+            int weapon_x , weapon_y;
+            while(1)
+            {
+                int x = rooms[end_program][0].left_col + 1 + rand() % (rooms[end_program][0].right_col - rooms[end_program][0].left_col - 2);
+                int y = rooms[end_program][0].up_row + 1 + rand() % (rooms[end_program][0].down_row - rooms[end_program][0].up_row - 2);
+                if(is_empty(x , y , object) == 0)
+                {
+                    weapon_x = x;
+                    weapon_y = y;
+                    object.x_pos[object.num] = x;
+                    object.y_pos[object.num] = y;
+                    object.num++;
+                    break;
+                }
+            }
+            if(end_program == 0)
+            {
+                mvprintw(weapon_y , weapon_x , "~");
+                shown_floor[0][weapon_y][weapon_x] = '~';
+                floor[0][weapon_y][weapon_x] = '~';
+            }
+            if(end_program == 1)
+            {
+                mvprintw(weapon_y , weapon_x , "x");
+                shown_floor[0][weapon_y][weapon_x] = 'x';
+                floor[0][weapon_y][weapon_x] = 'x';
+            }
+            if(end_program == 2)
+            {
+                mvprintw(weapon_y , weapon_x , "w");
+                shown_floor[0][weapon_y][weapon_x] = 'w';
+                floor[0][weapon_y][weapon_x] = 'w';
+            }
+            if(end_program == 3)
+            {
+                mvprintw(weapon_y , weapon_x , "k");
+                shown_floor[0][weapon_y][weapon_x] = 'k';
+                floor[0][weapon_y][weapon_x] = 'k';
+            }
+
+            move_player(&player1 , floor[end_program] , shown_floor[end_program] , gold , &end_program , rooms[end_program] , trap , password , monster , &dagger , foods , charm);
+    //        end_program = 5;
+        }
+        
+        if(end_program == 5)
+        {
+            clear();
+            pthread_join(thread1, NULL);
+            pthread_join(thread2, NULL);
+            mvprintw(15 , 40 , "OH YOU HAVE LOST. BETTER LUCK NEXT TIME");
+            while(getch() != 10){}
             refresh();
         }
-        //   print : & instead of + for down door of room 3
-        //   make an object for the pass_key
-        //   if in the door : two options : pay 10 money or use the key
-        //   fix moving to &
-
-        //
-        floor[end_program][doors_y[4]][doors_x[4]] = '@';
-        floor[end_program][rooms[end_program][1].up_row + 4][rooms[end_program][1].right_col] = '&';
-        rooms[end_program][2].room_type = 1;
-
-        rooms[end_program][3].room_type = 2;
-
-        make_hallway(doors_x , doors_y , floor[end_program]);
-
-        // giving every room a money:
-        GOLD gold[6];
-        for(int i = 0 ; i < 6 ; i++)
+        if(end_program == 4)
         {
-            gold[i].symbol = '*';
-            gold[i].x_pos = rooms[end_program][i].left_col + 1 + rand() % (rooms[end_program][i].right_col - rooms[end_program][i].left_col - 2);
-            gold[i].y_pos = rooms[end_program][i].up_row + 1 + rand() % (rooms[end_program][i].down_row - rooms[end_program][i].up_row - 2);
-            gold[i].amount = rand() % 20;
-            gold[i].used = 0;
-            object.x_pos[object.num] = gold[i].x_pos;
-            object.y_pos[object.num] = gold[i].y_pos;
-            object.num++;
+            clear();
+            pthread_join(thread1, NULL);
+            pthread_join(thread2, NULL);
+            mvprintw(0 , 0 , "CONGRATS. YOU HAVE REACHED THE ROOM OF TRESURE.");
+            while(getch() != 10){}
+            refresh();
+            player1.money += 100;
         }
-        
-        // make stairs
-        int stair_x , stair_y;
-        while(1)
-        {
-            stair_x = rooms[end_program][5].left_col + 1 + rand() % (rooms[end_program][5].right_col - rooms[end_program][5].left_col - 2);
-            stair_y = rooms[end_program][5].up_row + 1 + rand() % (rooms[end_program][5].down_row - rooms[end_program][5].up_row - 2);
-            if(floor[end_program][stair_y][stair_x] == '.' && (stair_x != gold[5].x_pos || stair_y != gold[5].y_pos))
-            {
-                object.x_pos[object.num] = stair_x;
-                object.y_pos[object.num] = stair_y;
-                object.num++;
-                break;
-            }
-        }
-
-        rooms[end_program][5].stair_x = stair_x;
-        rooms[end_program][5].stair_y = stair_y;
-        refresh();
-
-        // trap
-
-        TRAP trap[3];
-        for(int i = 0 ; i < 3 ; i++)
-        {
-            while(1)
-            {
-                int y_pos = rand() % 50;
-                int x_pos = rand() % 180;
-                if(floor[end_program][y_pos][x_pos] != ' ' && floor[end_program][y_pos][x_pos] != '+' && floor[end_program][y_pos][x_pos] != '|' && floor[end_program][y_pos][x_pos] != '-' && (x_pos != player1.x_pos || y_pos != player1.y_pos))
-                {
-                    trap[i].x_pos = x_pos;
-                    trap[i].y_pos = y_pos;
-                    object.x_pos[object.num] = x_pos;
-                    object.y_pos[object.num] = y_pos;
-                    object.num++;
-                    trap[i].second = 4 + rand() % 3;
-                    trap[i].damage = 10;
-                    break;
-                }
-            }
-        }
-        // floor[end_program][trap[0].y_pos][trap[0].x_pos] = 'T';
-        // floor[end_program][trap[1].y_pos][trap[1].x_pos] = 'T';
-        // floor[end_program][trap[2].y_pos][trap[2].x_pos] = 'T';
-        // 
-        
-        
-        // make food
-        FOOD foods[4];
-        while(1)
-        {
-            int x = rand() % 180 , y = rand() % 50;
-            if(floor[end_program][y][x] == '.' && is_empty(x , y , object) == 0)
-            {
-                foods[end_program].x_pos = x;
-                foods[end_program].y_pos = y;
-                object.x_pos[object.num] = x;
-                object.y_pos[object.num] = y;
-                object.num++;
-                break;
-            }
-        }
-        food_basics(&foods[end_program]);
-        floor[end_program][foods[end_program].y_pos][foods[end_program].x_pos] = foods[end_program].symbol;
-
-        // making charms:
-        CHARM charm[4];
-        while(1)
-        {
-            int x = rand() % 180 , y = rand() % 50;
-            if(floor[end_program][y][x] == '.' && is_empty(x , y , object) == 0)
-            {
-                charm[end_program].x_pos = x;
-                charm[end_program].y_pos = y;
-                object.x_pos[object.num] = x;
-                object.y_pos[object.num] = y;
-                object.num++;
-                break;
-            }
-        }
-        if(end_program == 0)
-        {
-            charm[end_program].symbol = 's';
-            charm[end_program].timer = 0;
-            charm[end_program].used = 0;
-            charm[end_program].type = 1;
-            charm[end_program].active = 0;
-        }
-        else if(end_program == 1)
-        {
-            charm[end_program].symbol = 'p';
-            charm[end_program].timer = 0;
-            charm[end_program].used = 0;
-            charm[end_program].type = 2;
-            charm[end_program].active = 0;
-        }
-        else
-        {
-            charm[end_program].symbol = 'h';
-            charm[end_program].timer = 0;
-            charm[end_program].used = 0;
-            charm[end_program].type = 3;
-            charm[end_program].active = 0;
-        }
-        floor[end_program][charm[end_program].y_pos][charm[end_program].x_pos] = charm[end_program].symbol;
-        // making columns
-        for(int i = 0 ; i < 6 ; i++)
-        {
-            while(1)
-            {
-                rooms[end_program][i].cols_x[rooms[end_program][i].col_count] = rooms[end_program][i].left_col + 2 + rand() % (rooms[end_program][i].right_col - rooms[end_program][i].left_col - 4);
-                rooms[end_program][i].cols_y[rooms[end_program][i].col_count] = rooms[end_program][i].up_row + 2 + rand() % (rooms[end_program][i].down_row - rooms[end_program][i].up_row - 4);
-                if(is_empty(rooms[end_program][i].cols_x[rooms[end_program][i].col_count] , rooms[end_program][i].cols_y[rooms[end_program][i].col_count] , object) == 0)
-                {
-                    rooms[end_program][i].col_count++;
-                    object.x_pos[object.num] = rooms[end_program][i].cols_x[rooms[end_program][i].col_count];
-                    object.y_pos[object.num] = rooms[end_program][i].cols_y[rooms[end_program][i].col_count];
-                    floor[end_program][object.y_pos[object.num]][object.x_pos[object.num]] = 'O';
-                    object.num++;
-                    break;
-                }
-            }
-            while(1)
-            {
-                rooms[end_program][i].cols_x[rooms[end_program][i].col_count] = rooms[end_program][i].left_col + 2 + rand() % (rooms[end_program][i].right_col - rooms[end_program][i].left_col - 4);
-                rooms[end_program][i].cols_y[rooms[end_program][i].col_count] = rooms[end_program][i].up_row + 2 + rand() % (rooms[end_program][i].down_row - rooms[end_program][i].up_row - 4);
-                if(is_empty(rooms[end_program][i].cols_x[rooms[end_program][i].col_count] , rooms[end_program][i].cols_y[rooms[end_program][i].col_count] , object) == 0)
-                {
-                    rooms[end_program][i].col_count++;
-                    object.x_pos[object.num] = rooms[end_program][i].cols_x[rooms[end_program][i].col_count];
-                    object.y_pos[object.num] = rooms[end_program][i].cols_y[rooms[end_program][i].col_count];
-                    floor[end_program][object.y_pos[object.num]][object.x_pos[object.num]] = 'O';
-                    object.num++;
-                    break;
-                }
-            }
-        }
-
-        show_map(rooms[end_program][0] , floor[end_program] , shown_floor[end_program]);
-        mvprintw(doors_y[0] , doors_x[0] , "+");
-        shown_floor[end_program][doors_y[0]][doors_x[0]] = '+';
-        rooms[end_program][0].been = 1;
-        mvprintw(gold[0].y_pos , gold[0].x_pos , "*");
-        shown_floor[end_program][gold[0].y_pos][gold[0].x_pos] = '*';
-        mvprintw(monster[0].y_pos , monster[0].x_pos , "%c" , monster[0].symbol);
-        shown_floor[end_program][monster[0].y_pos][monster[0].x_pos] = monster[0].symbol;
-        refresh();
-
-        mvprintw(player1.y_pos , player1.x_pos , "H");
-        move(player1.y_pos , player1.x_pos);
-
-        DAGGER dagger;
-        dagger.active = 0;
-        dagger.range = 5;
-        dagger.symbol = '~';
-        dagger.timer = 0;
-        dagger.moves = 0;
-        dagger.damage = 12;
-
-        move_player(&player1 , floor[end_program] , shown_floor[end_program] , gold , &end_program , rooms[end_program] , trap , password , monster , &dagger , foods , charm);
-//        end_program = 5;
     }
-    getch();
-    endwin();
-    pthread_join(thread1, NULL);
-    pthread_join(thread2, NULL);
-
-    endwin();
 }
 
 int make_menu(USER_DATA user)
@@ -590,6 +660,8 @@ int make_menu(USER_DATA user)
             {
                 // make settings page
                 // return make menu
+                settings(user);
+                return make_menu(user);
             }
             else
             {
@@ -624,6 +696,107 @@ int make_menu(USER_DATA user)
         }
         refresh();
     }
+}
+
+int settings(USER_DATA user)
+{
+    clear();
+    mvprintw(0 , 0 , "use up and down button to move and press enter");
+    refresh();
+    keypad(stdscr , TRUE);
+    mvprintw(9 , 50 , "DIFFICULTY");
+    char options[3][15] = {"GOOD"  , "MID" , "HARD"};
+    int x = 50 , y = 10;
+    attron(A_REVERSE);
+    mvprintw(y , x , "%s" , options[0]);
+    attroff(A_REVERSE);
+    mvprintw(y + 1 , x , "%s" , options[1]);
+    mvprintw(y + 2 , x , "%s" , options[2]);
+    int which = 0;
+    while(1)
+    {
+        int mover = getch();
+        if(mover == 10)
+        {
+            user_main.difficulty = which;
+            break;
+        }
+        else
+        {
+            if(mover == KEY_UP)
+            {
+                which--;
+            }
+            if(mover == KEY_DOWN)
+            {
+                which++;
+            }
+            which += 3;
+            which %= 3;
+            for(int i = 0 ; i < 3 ; i++)
+            {
+                if(which == i)
+                {
+                    attron(A_REVERSE);
+                    mvprintw(y + i , x , "%s" , options[i]);
+                    attroff(A_REVERSE);
+                }
+                else
+                {
+                    mvprintw(y + i , x , "%s" , options[i]);
+                }
+            }
+        }
+        refresh();
+    }
+    refresh();
+    mvprintw(9 , 80 , "HERO COLOR");
+    char option[3][15] = {"WHITE"  , "GREEN" , "BLUE"};
+    x = 80; 
+    y = 10;
+    attron(A_REVERSE);
+    mvprintw(y , x , "%s" , option[0]);
+    attroff(A_REVERSE);
+    mvprintw(y + 1 , x , "%s" , option[1]);
+    mvprintw(y + 2 , x , "%s" , option[2]);
+    which = 0;
+    while(1)
+    {
+        int mover = getch();
+        if(mover == 10)
+        {
+            user_main.color = which;
+            break;
+        }
+        else
+        {
+            if(mover == KEY_UP)
+            {
+                which--;
+            }
+            if(mover == KEY_DOWN)
+            {
+                which++;
+            }
+            which += 3;
+            which %= 3;
+            for(int i = 0 ; i < 3 ; i++)
+            {
+                if(which == i)
+                {
+                    attron(A_REVERSE);
+                    mvprintw(y + i , x , "%s" , option[i]);
+                    attroff(A_REVERSE);
+                }
+                else
+                {
+                    mvprintw(y + i , x , "%s" , option[i]);
+                }
+            }
+        }
+        refresh();
+    }
+    return 0;
 }
 
 int profile_page(USER_DATA user)
@@ -696,10 +869,6 @@ void sort_users_by_score(USER_DATA users[], int num_users)
 {
     qsort(users, num_users, sizeof(USER_DATA), compare_users);
 }
-
-
-
-
 
 int make_menu_aval()
 {
@@ -1050,9 +1219,11 @@ int log_in_menu()
             refresh();
         }
     }
-
-
+    strcpy(user_main.name , name);
 }
+
+
+
 
 int generate_map(ROOM room , char floor[50][180])
 {
@@ -1210,16 +1381,12 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
 {
     MONSTER * monster = (MONSTER *)malloc(6 * sizeof(MONSTER));
     monster = monsters;
-    while(floor_level[0] < 4)
+    while(1)
     {
         if(player->health <= 0)
         {
-            clear();
-            mvprintw(0 , 0 , "YOU HAVE LOST");
-            usleep(10000000);
-            floor_level[0] = 4;
+            floor_level[0] = 5;     
             break;
-            
         }
         move(2 , 0);
         clrtoeol();
@@ -1317,7 +1484,7 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
         {
             if(abs(monster[player->last_room].x_pos - player->x_pos) + abs(monster[player->last_room].y_pos - player->y_pos) == 1)
             {
-                monster[player->last_room].health -= 5 * player->power_charm;
+                monster[player->last_room].health -= player->close_range_damage * player->power_charm;
                 move(0 , 0);
                 clrtoeol();
                 mvprintw(0 , 0 , "YOU HAVE HIT THE MONSTER");
@@ -1342,57 +1509,272 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
                     int dir = getch();
                     if(dir == KEY_LEFT)
                     {
-                        dagger->active = 1;
-                        dagger->direction = 1;
-                        dagger->x_pos = player->x_pos;
-                        dagger->y_pos = player->y_pos;
-                        break;
+                        if(player->long_type == 0)
+                        {
+                            if(player->dagger_count > 0)
+                            {
+                                player->dagger_count--;
+                                dagger->active = 1;
+                                dagger->direction = 1;
+                                dagger->x_pos = player->x_pos;
+                                dagger->y_pos = player->y_pos;
+                                dagger->symbol = '~';
+                                dagger->damage = 12;
+                                dagger->range = 5;
+                            }
+                            break;
+                        }
+                        else if(player->long_type == 1)
+                        {
+                            if(player->arrow_count > 0)
+                            {
+                                player->arrow_count--;
+                                dagger->active = 1;
+                                dagger->direction = 1;
+                                dagger->x_pos = player->x_pos;
+                                dagger->y_pos = player->y_pos;
+                                dagger->symbol = 'x';
+                                dagger->damage = 5;
+                                dagger->range = 5;
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            if(player->wand_count > 0)
+                            {
+                                player->wand_count--;
+                                dagger->active = 1;
+                                dagger->direction = 1;
+                                dagger->x_pos = player->x_pos;
+                                dagger->y_pos = player->y_pos;
+                                dagger->symbol = 'w';
+                                dagger->damage = 15;
+                                dagger->range = 10;
+                            }
+                            break;
+                        }
+                        // dagger->active = 1;
+                        // dagger->direction = 1;
+                        // dagger->x_pos = player->x_pos;
+                        // dagger->y_pos = player->y_pos;
+                        // break;
                     }
                     else if(dir == KEY_RIGHT)
                     {
-                        dagger->active = 1;
-                        dagger->direction = 2;
-                        dagger->x_pos = player->x_pos;
-                        dagger->y_pos = player->y_pos;
-                        break;
+                        if(player->long_type == 0)
+                        {
+                            if(player->dagger_count > 0)
+                            {
+                                player->dagger_count--;
+                                dagger->active = 1;
+                                dagger->direction = 2;
+                                dagger->x_pos = player->x_pos;
+                                dagger->y_pos = player->y_pos;
+                                dagger->symbol = '~';
+                                dagger->damage = 12;
+                                dagger->range = 5;
+                            }
+                            break;
+                        }
+                        else if(player->long_type == 1)
+                        {
+                            if(player->arrow_count > 0)
+                            {
+                                player->arrow_count--;
+                                dagger->active = 1;
+                                dagger->direction = 2;
+                                dagger->x_pos = player->x_pos;
+                                dagger->y_pos = player->y_pos;
+                                dagger->symbol = 'x';
+                                dagger->damage = 5;
+                                dagger->range = 5;
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            if(player->wand_count > 0)
+                            {
+                                player->wand_count--;
+                                dagger->active = 1;
+                                dagger->direction = 2;
+                                dagger->x_pos = player->x_pos;
+                                dagger->y_pos = player->y_pos;
+                                dagger->symbol = 'w';
+                                dagger->damage = 15;
+                                dagger->range = 10;
+                            }
+                            break;
+                        }
                     }
                     if(dir == KEY_UP)
                     {
-                        dagger->active = 1;
-                        dagger->direction = 3;
-                        dagger->x_pos = player->x_pos;
-                        dagger->y_pos = player->y_pos;
-                        break;
+                        if(player->long_type == 0)
+                        {
+                            if(player->dagger_count > 0)
+                            {
+                                player->dagger_count--;
+                                dagger->active = 1;
+                                dagger->direction = 3;
+                                dagger->x_pos = player->x_pos;
+                                dagger->y_pos = player->y_pos;
+                                dagger->symbol = '~';
+                                dagger->damage = 12;
+                                dagger->range = 5;
+                            }
+                            break;
+                        }
+                        else if(player->long_type == 1)
+                        {
+                            if(player->arrow_count > 0)
+                            {
+                                player->arrow_count--;
+                                dagger->active = 1;
+                                dagger->direction = 3;
+                                dagger->x_pos = player->x_pos;
+                                dagger->y_pos = player->y_pos;
+                                dagger->symbol = 'x';
+                                dagger->damage = 5;
+                                dagger->range = 5;
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            if(player->wand_count > 0)
+                            {
+                                player->wand_count--;
+                                dagger->active = 1;
+                                dagger->direction = 3;
+                                dagger->x_pos = player->x_pos;
+                                dagger->y_pos = player->y_pos;
+                                dagger->symbol = 'w';
+                                dagger->damage = 15;
+                                dagger->range = 10;
+                            }
+                            break;
+                        }
                     }
                     if(dir == KEY_DOWN)
                     {
-                        dagger->active = 1;
-                        dagger->direction = 4;
-                        dagger->x_pos = player->x_pos;
-                        dagger->y_pos = player->y_pos;
-                        break;
+                        if(player->long_type == 0)
+                        {
+                            if(player->dagger_count > 0)
+                            {
+                                player->dagger_count--;
+                                dagger->active = 1;
+                                dagger->direction = 4;
+                                dagger->x_pos = player->x_pos;
+                                dagger->y_pos = player->y_pos;
+                                dagger->symbol = '~';
+                                dagger->damage = 12;
+                                dagger->range = 5;
+                            }
+                            break;
+                        }
+                        else if(player->long_type == 1)
+                        {
+                            if(player->arrow_count > 0)
+                            {
+                                player->arrow_count--;
+                                dagger->active = 1;
+                                dagger->direction = 4;
+                                dagger->x_pos = player->x_pos;
+                                dagger->y_pos = player->y_pos;
+                                dagger->symbol = 'x';
+                                dagger->damage = 5;
+                                dagger->range = 5;
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            if(player->wand_count > 0)
+                            {
+                                player->wand_count--;
+                                dagger->active = 1;
+                                dagger->direction = 4;
+                                dagger->x_pos = player->x_pos;
+                                dagger->y_pos = player->y_pos;
+                                dagger->symbol = 'w';
+                                dagger->damage = 15;
+                                dagger->range = 10;
+                            }
+                            break;
+                        }
                     }
                 }
                 refresh();
             }
         }
+        else if(mover == 119)
+        {
+            int ran = init_weapon_menu();
+            if(ran)
+            {
+                player->long_type = long_range_menu(player);
+            }
+            else
+            {
+                short_range_menu(player);
+            }
+            clear();
+            for(int j = 0 ; j < 50 ; j++)
+            {
+                for(int i = 0 ; i < 180 ; i++)
+                {
+                    mvprintw(j , i , "%c" , shown_floor[j][i]);
+                }
+            }
+            refresh();
+        }
         else if(mover == 97)
         {
-            dagger->active = 1;
-            dagger->x_pos = player->x_pos;
-            dagger->y_pos = player->y_pos;
+            if(player->long_type == 0)
+            {
+                if(player->dagger_count > 0)
+                {
+                    dagger->active = 1;
+                    dagger->x_pos = player->x_pos;
+                    dagger->y_pos = player->y_pos;
+                    dagger->symbol = '~';
+                    dagger->range = 5;
+                    dagger->damage = 12;
+                    player->dagger_count--;
+                }
+            }
+            else if(player->long_type == 1)
+            {
+                if(player->arrow_count > 0)
+                {
+                    dagger->active = 1;
+                    dagger->symbol = 'x';
+                    dagger->range = 5;
+                    dagger->damage = 5;
+                    dagger->x_pos = player->x_pos;
+                    dagger->y_pos = player->y_pos;
+                    player->arrow_count--;
+                }
+            }
+            else
+            {
+                if(player->wand_count > 0)
+                {
+                    dagger->active = 1;
+                    dagger->symbol = 'w';
+                    dagger->range = 10;
+                    dagger->damage = 15;
+                    dagger->x_pos = player->x_pos;
+                    dagger->y_pos = player->y_pos;
+                    player->wand_count--;
+                }
+            }
         }
         else if(mover == 113)
         {
             floor_level[0]++;
-            if(floor_level[0] == 4)
-            {
-                endwin();
-                pthread_join(thread1, NULL);
-                pthread_join(thread2, NULL);
-                pthread_mutex_destroy(&player->lock);
-                pthread_mutex_destroy(&password.lock);
-            }
+            cbreak();
             break;
         }
         else if(mover == 109)
@@ -1475,6 +1857,7 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
         }
         else if(mover == KEY_UP)
         {
+            int flag = 0;
             for(int i = 0 ; i <= player->speed_charm ; i++)
             {
                 if(mvinch(player->y_pos - 1 , player->x_pos) == '.' || mvinch(player->y_pos - 1 , player->x_pos) == '+' || mvinch(player->y_pos - 1 , player->x_pos) == '#')
@@ -1526,6 +1909,8 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
                 else if(mvinch(player->y_pos - 1 , player->x_pos) == '<')
                 {
                     floor_level[0]++;
+                    cbreak();
+                    flag = 1;
                     break;
                 }
                 else if(mvinch(player->y_pos - 1 , player->x_pos) == '@')
@@ -1566,7 +1951,7 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
                         }
                     }
                 }
-                else if(mvinch(player->y_pos - 1 , player->x_pos) == 's' || mvinch(player->y_pos - 1 , player->x_pos) == 'h' || mvinch(player->y_pos - 1 , player->x_pos) == 'p')            
+                else if(mvinch(player->y_pos - 1 , player->x_pos) == 's' || mvinch(player->y_pos - 1 , player->x_pos) == 'h' || mvinch(player->y_pos - 1 , player->x_pos) == 'p')           
                 {
                     mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
                     shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
@@ -1595,14 +1980,155 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
                         }
                     }
                 }
+                else if(mvinch(player->y_pos - 1 , player->x_pos) == '~')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->y_pos--;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "DAGGER ADDED TO INVENTORY");
+                            floor[player->y_pos][player->x_pos] = '.';
+                            if(player->dagger_count == -1)
+                            {
+                                player->dagger_count = 15;
+                            }
+                            else
+                            {
+                                player->dagger_count++;
+                            }
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if(mvinch(player->y_pos - 1 , player->x_pos) == 'x')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->y_pos--;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "ARROW ADDED TO INVENTORY");
+                            floor[player->y_pos][player->x_pos] = '.';
+                            if(player->arrow_count == -1)
+                            {
+                                player->arrow_count = 20;
+                            }
+                            else
+                            {
+                                player->arrow_count++;
+                            }
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if(mvinch(player->y_pos - 1 , player->x_pos) == 'w')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->y_pos--;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "ARROW ADDED TO INVENTORY");
+                            floor[player->y_pos][player->x_pos] = '.';
+                            if(player->wand_count == -1)
+                            {
+                                player->wand_count = 10;
+                            }
+                            else
+                            {
+                                player->wand_count++;
+                            }
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if(mvinch(player->y_pos - 1 , player->x_pos) == 'k')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->y_pos--;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "SWORD ADDED TO INVENTORY");
+                            player->close_range_damage = 10;
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
                 else
                 {
                     move(player->y_pos , player->x_pos);
                 }
             }
+            if(flag)
+            {
+                break;
+            }
         }
         else if(mover == KEY_DOWN)
         {
+            int flag = 0;
             for(int i = 0 ; i <= player->speed_charm ; i++)
             {
                 if(mvinch(player->y_pos + 1 , player->x_pos) == '.' || mvinch(player->y_pos + 1 , player->x_pos) == '+' || mvinch(player->y_pos + 1 , player->x_pos) == '#')
@@ -1654,6 +2180,8 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
                 else if(mvinch(player->y_pos + 1 , player->x_pos) == '<')
                 {
                     floor_level[0]++;
+                    flag = 1;
+                    cbreak();
                     break;
                 }
                 else if(mvinch(player->y_pos + 1 , player->x_pos) == '@')
@@ -1723,14 +2251,155 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
                         }
                     }
                 }
+                else if(mvinch(player->y_pos + 1 , player->x_pos) == '~')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->y_pos++;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "DAGGER ADDED TO INVENTORY");
+                            floor[player->y_pos][player->x_pos] = '.';
+                            if(player->dagger_count == -1)
+                            {
+                                player->dagger_count = 15;
+                            }
+                            else
+                            {
+                                player->dagger_count++;
+                            }
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if(mvinch(player->y_pos + 1 , player->x_pos) == 'x')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->y_pos++;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "ARROW ADDED TO INVENTORY");
+                            floor[player->y_pos][player->x_pos] = '.';
+                            if(player->arrow_count == -1)
+                            {
+                                player->arrow_count = 20;
+                            }
+                            else
+                            {
+                                player->arrow_count++;
+                            }
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if(mvinch(player->y_pos + 1 , player->x_pos) == 'w')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->y_pos++;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "ARROW ADDED TO INVENTORY");
+                            floor[player->y_pos][player->x_pos] = '.';
+                            if(player->wand_count == -1)
+                            {
+                                player->wand_count = 10;
+                            }
+                            else
+                            {
+                                player->wand_count++;
+                            }
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if(mvinch(player->y_pos + 1 , player->x_pos) == 'k')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->y_pos++;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "SWORD ADDED TO INVENTORY");
+                            player->close_range_damage = 10;
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
                 else
-            {
-                move(player->y_pos , player->x_pos);
+                {
+                    move(player->y_pos , player->x_pos);
+                }
             }
+            if(flag)
+            {
+                break;
             }
         }
         else if(mover == KEY_RIGHT)
         {
+            int flag = 0;
             for(int i = 0 ; i <= player->speed_charm ; i++)
             {
                 if(mvinch(player->y_pos , player->x_pos + 1) == '.' || mvinch(player->y_pos , player->x_pos + 1) == '+' || mvinch(player->y_pos , player->x_pos + 1) == '#')
@@ -1782,6 +2451,8 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
                 else if(mvinch(player->y_pos , player->x_pos + 1) == '<')
                 {
                     floor_level[0]++;
+                    flag = 1;
+                    cbreak();
                     break;
                 }
                 else if(mvinch(player->y_pos , player->x_pos + 1) == '&')
@@ -1849,6 +2520,142 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
                         }
                     }
                 }
+                else if(mvinch(player->y_pos , player->x_pos + 1) == '~')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->x_pos++;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "DAGGER ADDED TO INVENTORY");
+                            floor[player->y_pos][player->x_pos] = '.';
+                            if(player->dagger_count == -1)
+                            {
+                                player->dagger_count = 15;
+                            }
+                            else
+                            {
+                                player->dagger_count++;
+                            }
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if(mvinch(player->y_pos , player->x_pos + 1) == 'x')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->x_pos++;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "ARROW ADDED TO INVENTORY");
+                            floor[player->y_pos][player->x_pos] = '.';
+                            if(player->arrow_count == -1)
+                            {
+                                player->arrow_count = 20;
+                            }
+                            else
+                            {
+                                player->arrow_count++;
+                            }
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if(mvinch(player->y_pos , player->x_pos + 1) == 'w')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->x_pos++;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "ARROW ADDED TO INVENTORY");
+                            floor[player->y_pos][player->x_pos] = '.';
+                            if(player->wand_count == -1)
+                            {
+                                player->wand_count = 10;
+                            }
+                            else
+                            {
+                                player->wand_count++;
+                            }
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if(mvinch(player->y_pos , player->x_pos + 1) == 'k')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->x_pos++;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "SWORD ADDED TO INVENTORY");
+                            player->close_range_damage = 10;
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
                 else if(player->last_room_type == 2)
                 {
                     if(mvinch(player->y_pos , player->x_pos + 1) == '|' && floor[player->y_pos][player->x_pos + 1] == '+')
@@ -1859,7 +2666,6 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
                         mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
                         shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
                         player->x_pos++;
-
                         mvprintw(player->y_pos , player->x_pos , "H");
                         shown_floor[player->y_pos][player->x_pos] = 'H';
                         move(player->y_pos , player->x_pos);
@@ -1867,13 +2673,18 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
                     }
                 }
                 else
-            {
-                move(player->y_pos , player->x_pos);
+                {
+                    move(player->y_pos , player->x_pos);
+                }
             }
+            if(flag)
+            {
+                break;
             }
         }
         else if(mover == KEY_LEFT)
         {
+            int flag = 0;
             for(int i = 0 ; i <= player->speed_charm ; i++)
             {
                 if(mvinch(player->y_pos , player->x_pos - 1) == '.' || mvinch(player->y_pos , player->x_pos - 1) == '+' || mvinch(player->y_pos , player->x_pos - 1) == '#')
@@ -1925,6 +2736,8 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
                 else if(mvinch(player->y_pos , player->x_pos - 1) == '<')
                 {
                     floor_level[0]++;
+                    flag = 1;
+                    cbreak();
                     break;
                 }
                 else if(mvinch(player->y_pos , player->x_pos - 1) == 'f' || mvinch(player->y_pos , player->x_pos - 1) == 'a' || mvinch(player->y_pos , player->x_pos - 1) == 'm')
@@ -1985,10 +2798,150 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
                         }
                     }
                 }
+                else if(mvinch(player->y_pos , player->x_pos - 1) == '~')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->x_pos--;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "DAGGER ADDED TO INVENTORY");
+                            floor[player->y_pos][player->x_pos] = '.';
+                            if(player->dagger_count == -1)
+                            {
+                                player->dagger_count = 15;
+                            }
+                            else
+                            {
+                                player->dagger_count++;
+                            }
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if(mvinch(player->y_pos , player->x_pos - 1) == 'x')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->x_pos--;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "ARROW ADDED TO INVENTORY");
+                            floor[player->y_pos][player->x_pos] = '.';
+                            if(player->arrow_count == -1)
+                            {
+                                player->arrow_count = 20;
+                            }
+                            else
+                            {
+                                player->arrow_count++;
+                            }
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if(mvinch(player->y_pos , player->x_pos - 1) == 'w')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->x_pos--;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "ARROW ADDED TO INVENTORY");
+                            floor[player->y_pos][player->x_pos] = '.';
+                            if(player->wand_count == -1)
+                            {
+                                player->wand_count = 10;
+                            }
+                            else
+                            {
+                                player->wand_count++;
+                            }
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if(mvinch(player->y_pos , player->x_pos - 1) == 'k')
+                {
+                    mvprintw(player->y_pos , player->x_pos , "%c" , floor[player->y_pos][player->x_pos]);
+                    shown_floor[player->y_pos][player->x_pos] = floor[player->y_pos][player->x_pos];
+                    player->x_pos--;
+                    mvprintw(player->y_pos , player->x_pos , "H");
+                    shown_floor[player->y_pos][player->x_pos] = 'H';
+                    move(player->y_pos , player->x_pos);
+                    while(1)
+                    {
+                        move(0 , 0);
+                        clrtoeol();
+                        mvprintw(0 , 0 , "PRESS u TO TAKE THE WEAPON. PRESS d TO LEAVE IT.");
+                        int pick_up = getch();
+                        if(pick_up == 117)
+                        {
+                            move(0 , 0);
+                            clrtoeol();
+                            mvprintw(0 , 0 , "SWORD ADDED TO INVENTORY");
+                            player->close_range_damage = 10;
+                            break;
+                        }
+                        else if(pick_up == 100)
+                        {
+                            break;
+                        }
+                    }
+                }
                 else
-            {
-                move(player->y_pos , player->x_pos);
+                {
+                    move(player->y_pos , player->x_pos);
+                }
             }
+            if(flag)
+            {
+                break;
             }
         }
         refresh();
@@ -2057,7 +3010,7 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
             {
                 if(dagger->timer >= 5)
                 {
-                    move_dagger(dagger , floor , shown_floor , monster , player);
+                    move_dagger(dagger , floor , shown_floor , monster + player->last_room , player);
                     dagger->timer = 0;
                     dagger->moves++;
                 }
@@ -2090,7 +3043,7 @@ int move_player(PLAYER * player , char floor[50][180] , char shown_floor[50][180
             else
             {
                 player->hunger++;
-                if(player->health < 100 && player->hunger < 10) 
+                if(player->health < 100 - (25 * user_main.difficulty) && player->hunger < 10) 
                 {   
                     player->health += player->health_charm;
                 }
@@ -2589,8 +3542,6 @@ int move_dagger(DAGGER * dagger , char floor[50][180] , char shown_floor[50][180
             mvprintw(dagger->y_pos , dagger->x_pos , ".");
             shown_floor[dagger->y_pos][dagger->x_pos] = '.';
             dagger->active = 0;
-            dagger->range = 5;
-            dagger->symbol = '~';
             dagger->timer = 0;
             dagger->moves = 0;
             move(0 , 0);
@@ -2624,8 +3575,6 @@ int move_dagger(DAGGER * dagger , char floor[50][180] , char shown_floor[50][180
             mvprintw(dagger->y_pos , dagger->x_pos , ".");
             shown_floor[dagger->y_pos][dagger->x_pos] = '.';
             dagger->active = 0;
-            dagger->range = 5;
-            dagger->symbol = '~';
             dagger->timer = 0;
             dagger->moves = 0;
             move(0 , 0);
@@ -2659,8 +3608,6 @@ int move_dagger(DAGGER * dagger , char floor[50][180] , char shown_floor[50][180
             mvprintw(dagger->y_pos , dagger->x_pos , ".");
             shown_floor[dagger->y_pos][dagger->x_pos] = '.';
             dagger->active = 0;
-            dagger->range = 5;
-            dagger->symbol = '~';
             dagger->timer = 0;
             dagger->moves = 0;
             move(0 , 0);
@@ -2694,8 +3641,6 @@ int move_dagger(DAGGER * dagger , char floor[50][180] , char shown_floor[50][180
             mvprintw(dagger->y_pos , dagger->x_pos , ".");
             shown_floor[dagger->y_pos][dagger->x_pos] = '.';
             dagger->active = 0;
-            dagger->range = 5;
-            dagger->symbol = '~';
             dagger->timer = 0;
             dagger->moves = 0;
             move(0 , 0);
@@ -2981,4 +3926,187 @@ int init_monsters(MONSTER monster[6] , ROOM rooms[6])
     monster[5].health = 20;
     monster[5].active = 0;
     monster[5].type = 1;
+}
+
+int init_weapon_menu()
+{
+    clear();
+    mvprintw(0 , 0 , "use up and down button to move and press enter");
+    refresh();
+    keypad(stdscr , TRUE);
+    char options[2][25] = {"SHORT RANGE MENU"  , "LONG RANGE MENU"};
+    int x = 50 , y = 10;
+    attron(A_REVERSE);
+    mvprintw(y , x , "%s" , options[0]);
+    attroff(A_REVERSE);
+    mvprintw(y + 1 , x , "%s" , options[1]);
+    int which = 0;
+    while(1)
+    {
+        int mover = getch();
+        if(mover == 10)
+        {
+            return which;
+        }
+        else
+        {
+            if(mover == KEY_UP)
+            {
+                which--;
+            }
+            if(mover == KEY_DOWN)
+            {
+                which++;
+            }
+            which += 2;
+            which %= 2;
+            for(int i = 0 ; i < 2 ; i++)
+            {
+                if(which == i)
+                {
+                    attron(A_REVERSE);
+                    mvprintw(y + i , x , "%s" , options[i]);
+                    attroff(A_REVERSE);
+                }
+                else
+                {
+                    mvprintw(y + i , x , "%s" , options[i]);
+                }
+            }
+        }
+        refresh();
+    }
+}
+
+int long_range_menu(PLAYER * player)
+{
+    clear();
+    mvprintw(0 , 0 , "use up and down button to move and press enter");
+    refresh();
+    keypad(stdscr , TRUE);
+    char options[3][15] = {"DAGGERS" , "ARROWS" , "MAGIC WANDS"};
+    int x = 50 , y = 10;
+    attron(A_REVERSE);
+    mvprintw(y , x , "%s" , options[0]);
+    attroff(A_REVERSE);
+    mvprintw(y + 1 , x , "%s" , options[1]);
+    mvprintw(y + 2 , x , "%s" , options[1]);
+    int which = 0;
+    while(1)
+    {
+        int mover = getch();
+        if(mover == 10)
+        {
+            return which;
+        }
+        else
+        {
+            if(mover == KEY_UP)
+            {
+                which--;
+            }
+            if(mover == KEY_DOWN)
+            {
+                which++;
+            }
+            which += 3;
+            which %= 3;
+            for(int i = 0 ; i < 3 ; i++)
+            {
+                if(which == i)
+                {
+                    attron(A_REVERSE);
+                    mvprintw(y + i , x , "%s" , options[i]);
+                    attroff(A_REVERSE);
+                    if(i == 2)
+                    {
+                        if(player->wand_count < 1)
+                        {
+                            mvprintw(y + i , x + 15 , "NO WANDS");
+                        }
+                        else
+                        {
+                            mvprintw(y + i , x + 15 , "YOU HAVE %d WANDS" , player->wand_count);
+                        }
+                    }
+                    if(i == 0)
+                    {
+                        if(player->dagger_count < 1)
+                        {
+                            mvprintw(y + i , x + 15 , "NO DAGGERS");
+                        }
+                        else
+                        {
+                            mvprintw(y + i , x + 15 , "YOU HAVE %d DAGGERS" , player->dagger_count);
+                        }
+                    }
+                    if(i == 1)
+                    {
+                        if(player->arrow_count < 1)
+                        {
+                            mvprintw(y + i , x + 15 , "NO ARROWS");
+                        }
+                        else
+                        {
+                            mvprintw(y + i , x + 15 , "YOU HAVE %d ARROWS" , player->arrow_count);
+                        }
+                    }
+                }
+                else
+                {
+                    mvprintw(y + i , x , "%s" , options[i]);
+                    if(i == 2)
+                    {
+                        if(player->wand_count < 1)
+                        {
+                            mvprintw(y + i , x + 15 , "NO WANDS");
+                        }
+                        else
+                        {
+                            mvprintw(y + i , x + 15 , "YOU HAVE %d WANDS" , player->wand_count);
+                        }
+                    }
+                    if(i == 0)
+                    {
+                        if(player->dagger_count < 1)
+                        {
+                            mvprintw(y + i , x + 15 , "NO DAGGERS");
+                        }
+                        else
+                        {
+                            mvprintw(y + i , x + 15 , "YOU HAVE %d DAGGERS" , player->dagger_count);
+                        }
+                    }
+                    if(i == 1)
+                    {
+                        if(player->arrow_count < 1)
+                        {
+                            mvprintw(y + i , x + 15 , "NO ARROWS");
+                        }
+                        else
+                        {
+                            mvprintw(y + i , x + 15 , "YOU HAVE %d ARROWS" , player->arrow_count);
+                        }
+                    }
+                }
+            }
+        }
+        refresh();
+    }
+}
+
+int short_range_menu(PLAYER * player)
+{
+    clear();
+    mvprintw(0 , 0 , "PRESS ENTER TO CONINUE");
+    if(player->close_range_damage == 5)
+    {
+        mvprintw(15 , 40 , "YOU HAVE MACE");
+    }
+    else
+    {
+        mvprintw(15 , 40 , "YOU HAVE SWORD");
+    }
+    while(getch() != 10){}
+    return 0;
 }
